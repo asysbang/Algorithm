@@ -4,7 +4,39 @@ import java.awt.image.BufferedImage;
 
 public class Gaussian {
 
-	public void blur(BufferedImage image) {
+	/**
+	 * 
+	 * @param data
+	 * @param kernel
+	 * @return
+	 */
+	public int getWeightSum(int[][] data, double[][] kernel) {
+		double sum = 0.0;
+		// ????? 长方形时 需要确认
+		int width = kernel[0].length;
+		int height = kernel.length;
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				sum += data[x][y] * kernel[x][y];
+			}
+		}
+		int res = (int) sum;
+		if (res>255) {
+			res =255;
+		}
+		return res;
+	}
+
+	/**
+	 * 
+	 * @param image
+	 * @param kSize
+	 * @param sigma
+	 * @throws Exception
+	 */
+	public BufferedImage blur(BufferedImage image, int kSize, double sigma) throws Exception {
+		double[][] kernel = new double[kSize][kSize];
+		kernel = getKernel(kSize, kSize, sigma, sigma);
 		int width = image.getWidth();
 		int height = image.getHeight();
 		int type = image.getType();
@@ -14,17 +46,67 @@ public class Gaussian {
 			for (int y = 0; y < height; y++) {
 				int pixel = image.getRGB(x, y);
 				if (type == BufferedImage.TYPE_3BYTE_BGR) {
+					int[][] dataRed = new int[kSize][kSize];
+					int[][] dataGreen = new int[kSize][kSize];
+					int[][] dataBlue = new int[kSize][kSize];
+
 					int blue = pixel & 0xFF;
 					int green = (pixel >> 8) & 0xFF;
 					int red = (pixel >> 16) & 0xFF;
-					if(x == 36 && y ==200) {
-						System.out.println("====bgr = " + blue +" , "+green+" , "+red);
+					if (x == 36 && y == 200) {
+						System.out.println("====bgr = " + blue + " , " + green + " , " + red);
 					}
+					fillData(image, x, y, dataRed, dataGreen, dataBlue);
+					int redSum = getWeightSum(dataRed,kernel);
+					int greenSum = getWeightSum(dataGreen,kernel);
+					int blueSum =getWeightSum(dataBlue,kernel);
+//					System.out.println("====bgr = " + redSum + " , " + greenSum + " , " + blueSum);
+					
+					
+					int bgrPixel = (blueSum& 0xFF) |((greenSum &0xFF) <<8)|((redSum&0xFF)<<16);
+					resImage.setRGB(x, y, bgrPixel);
 
 				}
-
 			}
 		}
+		return resImage;
+	}
+
+	/**
+	 * 填充数据 x,y 为坐标远点
+	 * 
+	 * @param image
+	 * @param x
+	 * @param y
+	 * @param data  //用来和kernel做权重求和
+	 */
+	private void fillData(BufferedImage image, int xPoint, int yPoint, int[][] dataRed, int[][] dataGreen,
+			int[][] dataBlue) {
+
+		int imageWidth = image.getWidth();
+		int imageHeight = image.getHeight();
+
+		int width = dataRed[0].length;
+		int height = dataRed.length;
+		int radius = width / 2;
+
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				int xIndex = xPoint - radius + x;
+				int yIndex = yPoint - radius + y;
+				if (xIndex < 0 || yIndex < 0 || xIndex >= imageWidth || yIndex >= imageHeight) {
+					dataRed[x][y] = 0;
+					dataGreen[x][y] = 0;
+					dataBlue[x][y] = 0;
+					continue;
+				}
+				int pixel = image.getRGB(xIndex, yIndex);
+				dataRed[x][y] = (pixel >> 16) & 0xFF;
+				dataGreen[x][y] = (pixel >> 8) & 0xFF;
+				dataBlue[x][y] = pixel & 0xFF;
+			}
+		}
+
 	}
 
 	/**
@@ -35,7 +117,8 @@ public class Gaussian {
 	 * @throws Exception
 	 */
 	public double[][] getKernel(int radius, double sigma) throws Exception {
-		return getKernel(radius, radius, sigma, sigma);
+		int kSize = radius * 2 + 1;
+		return getKernel(kSize, kSize, sigma, sigma);
 	}
 
 	/**
