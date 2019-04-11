@@ -21,13 +21,14 @@ public class Gaussian {
 			}
 		}
 		int res = (int) sum;
-		if (res>255) {
-			res =255;
+		if (res > 255) {
+			res = 255;
 		}
 		return res;
 	}
 
 	/**
+	 * 
 	 * 
 	 * @param image
 	 * @param kSize
@@ -53,17 +54,16 @@ public class Gaussian {
 					int blue = pixel & 0xFF;
 					int green = (pixel >> 8) & 0xFF;
 					int red = (pixel >> 16) & 0xFF;
-					if (x == 36 && y == 200) {
-						System.out.println("====bgr = " + blue + " , " + green + " , " + red);
-					}
+//					if (x == 36 && y == 200) {
+//						System.out.println("====bgr = " + blue + " , " + green + " , " + red);
+//					}
 					fillData(image, x, y, dataRed, dataGreen, dataBlue);
-					int redSum = getWeightSum(dataRed,kernel);
-					int greenSum = getWeightSum(dataGreen,kernel);
-					int blueSum =getWeightSum(dataBlue,kernel);
+					int redSum = getWeightSum(dataRed, kernel);
+					int greenSum = getWeightSum(dataGreen, kernel);
+					int blueSum = getWeightSum(dataBlue, kernel);
 //					System.out.println("====bgr = " + redSum + " , " + greenSum + " , " + blueSum);
-					
-					
-					int bgrPixel = (blueSum& 0xFF) |((greenSum &0xFF) <<8)|((redSum&0xFF)<<16);
+
+					int bgrPixel = (blueSum & 0xFF) | ((greenSum & 0xFF) << 8) | ((redSum & 0xFF) << 16);
 					resImage.setRGB(x, y, bgrPixel);
 
 				}
@@ -143,13 +143,15 @@ public class Gaussian {
 			if (sigmaX > 0) {
 				sigmaY = sigmaX;
 			} else {
-				sigmaY = sigmaX;
+				// 如果都是0 则 用size代替
+				sigmaX = xKernelSize;
+				sigmaY = yKernelSize;
 			}
 		}
 		double[][] kernel = new double[xKernelSize][yKernelSize];
 		int xRadius = xKernelSize / 2;
 		int yRadius = yKernelSize / 2;
-		System.out.println("====xRadius = " + xRadius + ", yRadius = " + yRadius);
+//		System.out.println("====xRadius = " + xRadius + ", yRadius = " + yRadius);
 		double sum = 0;
 		// y需要倒序，保证xy对应的点符合坐标系
 		// 否则是x轴对称的排列方式
@@ -163,9 +165,9 @@ public class Gaussian {
 				System.out.print("    " + kernel[x][yKernelSize - y - 1]);
 				sum += kernel[x][yKernelSize - y - 1];
 			}
-			System.out.println("");
+//			System.out.println("");
 		}
-		System.out.println("====sum = " + sum);
+//		System.out.println("====sum = " + sum);
 		for (int y = 0; y < yKernelSize; y++) {
 			for (int x = 0; x < xKernelSize; x++) {
 				kernel[x][y] = kernel[x][y] / sum;
